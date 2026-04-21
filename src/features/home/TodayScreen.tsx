@@ -1,11 +1,11 @@
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import type { AppState, MedicationDose, MoodLevel } from '../../types/domain';
+import type { AppState, IntakeStatus, MedicationDose, MoodLevel } from '../../types/domain';
 
 interface Props {
   state: AppState;
   cycleDay: number | null;
-  updateDoseStatus: (doseId: string, status: 'done' | 'skipped' | 'postponed', time?: string) => void;
+  updateDoseStatus: (doseId: string, status: IntakeStatus, time?: string) => void;
   todayDoses: MedicationDose[];
   onSaveMood: (mood: MoodLevel) => void;
   mood?: MoodLevel;
@@ -18,7 +18,15 @@ const moodLabels: Record<MoodLevel, string> = {
   bad: 'плохо'
 };
 
-export const TodayScreen = ({ state, cycleDay, todayDoses, updateDoseStatus, onSaveMood, mood }: Props) => {
+const statusLabels: Record<IntakeStatus, string> = {
+  scheduled: 'Запланировано',
+  done: 'Принято',
+  skipped: 'Пропущено',
+  postponed: 'Отложено'
+};
+
+export const TodayScreen = (props: Props) => {
+  const { state, cycleDay, todayDoses = [], updateDoseStatus, onSaveMood, mood } = props;
   const today = format(new Date(), 'EEEE, d MMMM', { locale: ru });
   const medsById = new Map(state.treatmentPlan?.medications.map((med) => [med.id, med]));
 
@@ -32,9 +40,12 @@ export const TodayScreen = ({ state, cycleDay, todayDoses, updateDoseStatus, onS
           <span className="badge">День цикла: {cycleDay ?? '—'}</span>
         </div>
         {!todayDoses.length && <p className="muted">Сегодня все спокойно ✨</p>}
-        {todayDoses.map((dose) => {
+        {todayDoses.map((dose: MedicationDose) => {
           const med = medsById.get(dose.medicationId);
           if (!med) return null;
+          const isDone = dose.status === 'done';
+          const isSkipped = dose.status === 'skipped';
+          const isPostponed = dose.status === 'postponed';
           return (
             <div key={dose.id} className="card" style={{ marginBottom: 8, padding: 10 }}>
               <div className="space">
@@ -45,16 +56,25 @@ export const TodayScreen = ({ state, cycleDay, todayDoses, updateDoseStatus, onS
               <small className="muted">
                 {med.dosage}, {med.quantity}, {med.withFood}
               </small>
+              <div className="space" style={{ marginTop: 6 }}>
+                <small className="muted">Статус: {statusLabels[dose.status]}</small>
+                {dose.currentTime !== dose.plannedTime && <small className="muted">Было: {dose.plannedTime}</small>}
+              </div>
               <div className="row" style={{ marginTop: 8 }}>
-                <button className="btn" onClick={() => updateDoseStatus(dose.id, 'done')}>
+                <button type="button" className={`btn ${isDone ? 'success' : ''}`} onClick={() => updateDoseStatus(dose.id, 'done')} disabled={isDone}>
                   Принято
                 </button>
-                <button className="btn secondary" onClick={() => updateDoseStatus(dose.id, 'skipped')}>
+                <button type="button" className={`btn secondary ${isSkipped ? 'active' : ''}`} onClick={() => updateDoseStatus(dose.id, 'skipped')} disabled={isSkipped}>
                   Пропустить
                 </button>
-                <button className="btn warn" onClick={() => updateDoseStatus(dose.id, 'postponed', '23:30')}>
+                <button type="button" className={`btn warn ${isPostponed ? 'active' : ''}`} onClick={() => updateDoseStatus(dose.id, 'postponed', '23:30')}>
                   Отложить
                 </button>
+                {dose.status !== 'scheduled' && (
+                  <button type="button" className="btn ghost" onClick={() => updateDoseStatus(dose.id, 'scheduled', dose.plannedTime)}>
+                    Сбросить
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -65,7 +85,7 @@ export const TodayScreen = ({ state, cycleDay, todayDoses, updateDoseStatus, onS
         <h2 className="h2">Как ты сегодня себя чувствуешь?</h2>
         <div className="row" style={{ flexWrap: 'wrap' }}>
           {(Object.keys(moodLabels) as MoodLevel[]).map((item) => (
-            <button key={item} className={`btn ${mood === item ? 'secondary' : ''}`} onClick={() => onSaveMood(item)}>
+            <button type="button" key={item} className={`btn ${mood === item ? 'secondary' : ''}`} onClick={() => onSaveMood(item)}>
               {moodLabels[item]}
             </button>
           ))}

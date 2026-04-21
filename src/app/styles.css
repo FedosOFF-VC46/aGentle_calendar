@@ -16,6 +16,10 @@ button { font: inherit; }
 .btn { border: none; border-radius: 14px; padding: 10px 14px; background: #cfe8d8; color: #2f473a; font-weight: 600; }
 .btn.secondary { background: #f0e9f8; }
 .btn.warn { background: #ffe9db; }
+.btn.success { background: #95d3ae; }
+.btn.active { box-shadow: inset 0 0 0 2px rgba(47, 71, 58, 0.22); }
+.btn.ghost { background: #eef4ef; }
+.btn:disabled { opacity: 0.65; }
 .row { display:flex; gap:8px; align-items:center; }
 .space { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .badge { padding: 4px 8px; border-radius: 999px; background: #eef8f1; font-size: 12px; }
@@ -23,7 +27,12 @@ button { font: inherit; }
 .nav-btn { border: none; border-radius: 14px; background: #f4f7f5; padding: 9px 4px; font-size: 12px; }
 .nav-btn.active { background: #cfe8d8; font-weight: 600; }
 .grid-calendar { display:grid; grid-template-columns: repeat(7,1fr); gap:6px; }
-.day-cell { background:#fff; border-radius:12px; min-height:70px; padding:6px; font-size:12px; border:1px solid #edf2ee; }
+.weekday-cell { text-align: center; font-size: 12px; color: #728278; padding: 4px 0; }
+.day-cell { background:#fff; border-radius:12px; min-height:86px; padding:6px; font-size:12px; border:1px solid #edf2ee; text-align:left; cursor:pointer; }
+.day-cell.today { border-color: #95d3ae; box-shadow: inset 0 0 0 1px #95d3ae; }
+.day-cell.selected { border-color: #9dbcd0; box-shadow: inset 0 0 0 1px #9dbcd0; }
 .indicators { display:flex; flex-wrap:wrap; gap:4px; margin-top: 6px; }
 .ind { width:6px; height:6px; border-radius:50%; }
+.calendar-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5f7066; }
 .onboard { min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px; }
