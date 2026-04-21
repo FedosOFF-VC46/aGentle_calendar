@@ -14,6 +14,8 @@ export interface Medication {
   warnings?: string[];
   defaultTimes: string[];
   durationDays?: number;
+  startDay?: number;
+  specificDays?: number[];
 }
 
 export interface MedicationDose {

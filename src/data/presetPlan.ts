@@ -11,7 +11,8 @@ export const presetMedications: Medication[] = [
     notes: ['Запивать полным стаканом воды', 'Не ложиться 30 минут', 'Не сочетать рядом с молочными'],
     warnings: ['Разносить с железом, магнием, кальцием и антацидами на 2–3 часа'],
     defaultTimes: ['08:00', '20:00'],
-    durationDays: 7
+    durationDays: 7,
+    startDay: 1
   },
   {
     id: 'duphaston',
@@ -22,7 +23,8 @@ export const presetMedications: Medication[] = [
     withFood: 'any',
     notes: ['Главное — примерно равные интервалы'],
     defaultTimes: ['08:00', '20:00'],
-    durationDays: 10
+    durationDays: 10,
+    startDay: 1
   },
   {
     id: 'tranexam',
@@ -33,7 +35,8 @@ export const presetMedications: Medication[] = [
     withFood: 'any',
     notes: ['При чувствительном желудке — лучше после еды'],
     defaultTimes: ['08:00', '15:00', '20:00'],
-    durationDays: 3
+    durationDays: 3,
+    startDay: 1
   },
   {
     id: 'indomethacin',
@@ -44,7 +47,8 @@ export const presetMedications: Medication[] = [
     withFood: 'any',
     notes: ['Удобнее после туалета'],
     defaultTimes: ['20:00'],
-    durationDays: 5
+    durationDays: 5,
+    startDay: 1
   },
   {
     id: 'fluconazole',
@@ -54,7 +58,8 @@ export const presetMedications: Medication[] = [
     intakeKind: 'capsule',
     withFood: 'any',
     notes: ['Прием в 1-й и 4-й день лечения'],
-    defaultTimes: ['20:00']
+    defaultTimes: ['20:00'],
+    specificDays: [1, 4]
   },
   {
     id: 'vitamin-d',
@@ -65,7 +70,8 @@ export const presetMedications: Medication[] = [
     withFood: 'during',
     notes: ['Лучше во время еды'],
     defaultTimes: ['08:00'],
-    durationDays: 30
+    durationDays: 30,
+    startDay: 1
   },
   {
     id: 'maxilac',

@@ -36,3 +36,18 @@ button { font: inherit; }
 .calendar-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 12px; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5f7066; }
 .onboard { min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px; }
+
+.today-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.filter-chip { padding: 8px 12px; font-size: 12px; transition: transform .2s ease, box-shadow .2s ease; }
+.filter-chip.active { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(123, 168, 144, 0.2); }
+.undo-banner { margin-top: 10px; border-radius: 12px; padding: 10px; background: linear-gradient(90deg, #f0f8f4, #eef2ff); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.dose-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; border: 1px solid transparent; animation: doseIn .35s ease; }
+.dose-card:hover { transform: translateY(-1px); }
+.dose-done { border-color: #99d7b1; box-shadow: 0 8px 20px rgba(149, 211, 174, 0.2); }
+.dose-postponed { border-color: #ffd4b6; box-shadow: 0 8px 20px rgba(255, 205, 170, 0.22); }
+.dose-skipped { border-color: #e1d7ef; box-shadow: 0 8px 20px rgba(203, 185, 236, 0.22); }
+.dose-scheduled { border-color: #dcebe2; }
+@keyframes doseIn {
+  from { opacity: 0; transform: translateY(5px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

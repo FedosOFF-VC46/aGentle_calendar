@@ -9,6 +9,7 @@ import { MedicationsScreen } from '../features/medications/MedicationsScreen';
 import { SymptomsScreen } from '../features/symptoms/SymptomsScreen';
 import { CycleScreen } from '../features/cycle/CycleScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
+import { TreatmentSettingsScreen } from '../features/settings/TreatmentSettingsScreen';
 import { AboutScreen } from '../features/about/AboutScreen';
 import { DayDetailsModal } from '../features/day-details/DayDetailsModal';
 import { useLocalStore } from '../hooks/useLocalStore';
@@ -24,11 +25,11 @@ export type Screen = 'today' | 'calendar' | 'medications' | 'symptoms' | 'more';
 export const App = () => {
   const [isSplash, setSplash] = useState(true);
   const [screen, setScreen] = useState<Screen>('today');
-  const [moreTab, setMoreTab] = useState<'cycle' | 'settings' | 'about' | 'day'>('cycle');
+  const [moreTab, setMoreTab] = useState<'cycle' | 'settings' | 'treatment' | 'about' | 'day'>('cycle');
 
   const { state, patch } = useLocalStore();
   const { requestPermission } = useNotifications();
-  const { todayDoses, createPlan, updateDoseStatus } = useTreatmentPlan(state, patch);
+  const { todayDoses, createPlan, updateDoseStatus, updateMedications } = useTreatmentPlan(state, patch);
   const { cycleDay, startPeriod, endPeriod, undoEndPeriod } = useCycleTracker(state, patch);
   const { todayEntry, saveEntry } = useSymptoms(state, patch);
 
@@ -102,11 +103,13 @@ export const App = () => {
           <div className="row" style={{ marginBottom: 10 }}>
             <button className="btn" onClick={() => setMoreTab('cycle')}>Цикл</button>
             <button className="btn" onClick={() => setMoreTab('settings')}>Настройки</button>
+            <button className="btn" onClick={() => setMoreTab('treatment')}>Схема</button>
             <button className="btn" onClick={() => setMoreTab('about')}>О приложении</button>
             <button className="btn" onClick={() => setMoreTab('day')}>Детали дня</button>
           </div>
           {moreTab === 'cycle' && <CycleScreen entries={state.cycleEntries} onStart={startPeriod} onEnd={endPeriod} onUndoEnd={undoEndPeriod} cycleDay={cycleDay} />}
           {moreTab === 'settings' && <SettingsScreen state={state} patch={patch} />}
+          {moreTab === 'treatment' && state.treatmentPlan && <TreatmentSettingsScreen medications={state.treatmentPlan.medications} onSave={updateMedications} />}
           {moreTab === 'about' && <AboutScreen />}
           {moreTab === 'day' && <DayDetailsModal date={todayDate} state={state} />}
         </>

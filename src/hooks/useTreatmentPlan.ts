@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { buildInitialPlan } from '../lib/treatmentEngine';
-import type { AppState, IntakeStatus } from '../types/domain';
+import { buildInitialPlan, rebuildPlanDoses } from '../lib/treatmentEngine';
+import type { AppState, IntakeStatus, Medication } from '../types/domain';
 
 export const useTreatmentPlan = (state: AppState, patch: (updater: (s: AppState) => AppState) => void) => {
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -34,5 +34,15 @@ export const useTreatmentPlan = (state: AppState, patch: (updater: (s: AppState)
     });
   };
 
-  return { todayDoses, createPlan, updateDoseStatus };
+  const updateMedications = (medications: Medication[]) => {
+    patch((prev) => {
+      if (!prev.treatmentPlan) return prev;
+      return {
+        ...prev,
+        treatmentPlan: rebuildPlanDoses({ ...prev.treatmentPlan, medications })
+      };
+    });
+  };
+
+  return { todayDoses, createPlan, updateDoseStatus, updateMedications };
 };
