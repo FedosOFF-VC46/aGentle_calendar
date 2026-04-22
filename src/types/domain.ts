@@ -66,6 +66,13 @@ export interface NoteEntry {
   text: string;
 }
 
+export type CalendarTag = 'important' | 'self-care' | 'intimacy' | 'rest' | 'period';
+
+export interface CalendarTagEntry {
+  date: string;
+  tags: CalendarTag[];
+}
+
 export interface TreatmentPlan {
   id: string;
   startDate: string;
@@ -90,6 +97,7 @@ export interface AppState {
   cycleEntries: CycleEntry[];
   symptomsByDate: Record<string, SymptomEntry>;
   notesByDate: Record<string, NoteEntry>;
+  calendarTagsByDate: Record<string, CalendarTagEntry>;
   settings: AppSettings;
 }
 

@@ -1,6 +1,7 @@
 export const AboutScreen = () => (
-  <div className="card">
-    <h2 className="h2">О приложении</h2>
+  <div className="card card-soft">
+    <p className="eyebrow">О приложении</p>
+    <h2 className="h2">Нежный приватный помощник</h2>
     <p className="muted">Нежный приватный календарь лечения и самочувствия, работающий офлайн.</p>
     <p className="muted">Если схема лечения изменилась — можно отредактировать вручную в разделе приемов и настроек.</p>
     <p className="muted">Если стало хуже или появились тревожные симптомы — важно обратиться к врачу.</p>

@@ -5,6 +5,14 @@ import type { AppState } from '../../types/domain';
 const filters = ['all', 'today', 'tablet', 'suppository', 'post-menstrual'] as const;
 type Filter = (typeof filters)[number];
 
+const filterLabels: Record<Filter, string> = {
+  all: 'Все',
+  today: 'Сегодня',
+  tablet: 'Таблетки',
+  suppository: 'Свечи',
+  'post-menstrual': 'После цикла'
+};
+
 export const MedicationsScreen = ({ state }: { state: AppState }) => {
   const [filter, setFilter] = useState<Filter>('all');
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -28,10 +36,11 @@ export const MedicationsScreen = ({ state }: { state: AppState }) => {
   return (
     <div>
       <h1 className="h1">Приемы</h1>
-      <div className="row" style={{ overflowX: 'auto' }}>
+      <p className="muted">Собрали приемы в компактный список, чтобы на телефоне было легко быстро пробежать глазами по графику.</p>
+      <div className="tab-row" style={{ overflowX: 'auto', paddingBottom: 4 }}>
         {filters.map((item) => (
-          <button key={item} className={`btn ${filter === item ? 'secondary' : ''}`} onClick={() => setFilter(item)}>
-            {item}
+          <button key={item} className={`btn chip-btn ${filter === item ? 'secondary active' : 'ghost'}`} onClick={() => setFilter(item)}>
+            {filterLabels[item]}
           </button>
         ))}
       </div>
@@ -39,7 +48,7 @@ export const MedicationsScreen = ({ state }: { state: AppState }) => {
         const med = medMap.get(dose.medicationId);
         if (!med) return null;
         return (
-          <div className="card" key={dose.id}>
+          <div className="card card-soft" key={dose.id}>
             <div className="space">
               <strong>{med.name}</strong>
               <span className="badge">{dose.date} {dose.currentTime}</span>

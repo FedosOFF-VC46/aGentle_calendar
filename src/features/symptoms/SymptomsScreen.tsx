@@ -39,7 +39,8 @@ export const SymptomsScreen = ({
   return (
     <div>
       <h1 className="h1">Симптомы</h1>
-      <div className="card">
+      <p className="muted">Только самое важное на одном экране, остальное можно коротко дописать в комментарии.</p>
+      <div className="card card-soft">
         <label>Боль: {entry.painLevel}</label>
         <input type="range" min={0} max={10} value={entry.painLevel} onChange={(event) => setEntry((prev) => ({ ...prev, painLevel: Number(event.target.value) }))} />
         <label>Кровотечение</label>
@@ -51,7 +52,7 @@ export const SymptomsScreen = ({
         </select>
         <div className="row" style={{ flexWrap: 'wrap', marginTop: 10 }}>
           {alarmOptions.map((item) => (
-            <button key={item} className={`btn ${entry.alarmingSymptoms.includes(item) ? 'warn' : ''}`} onClick={() => toggleAlarm(item)}>
+            <button key={item} className={`btn chip-btn ${entry.alarmingSymptoms.includes(item) ? 'warn active' : 'ghost'}`} onClick={() => toggleAlarm(item)}>
               {item}
             </button>
           ))}
@@ -67,7 +68,7 @@ export const SymptomsScreen = ({
           value={entry.comment ?? ''}
           onChange={(event) => setEntry((prev) => ({ ...prev, comment: event.target.value }))}
         />
-        <button className="btn" style={{ marginTop: 10 }} onClick={() => onSave(entry)}>
+        <button className="btn action-btn success" style={{ marginTop: 10 }} onClick={() => onSave(entry)}>
           Сохранить
         </button>
       </div>

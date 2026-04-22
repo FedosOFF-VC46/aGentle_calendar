@@ -1,6 +1,6 @@
 import type { AppState } from '../types/domain';
 
-export const APP_STATE_VERSION = 2;
+export const APP_STATE_VERSION = 3;
 
 export const defaultState: AppState = {
   version: APP_STATE_VERSION,
@@ -9,6 +9,7 @@ export const defaultState: AppState = {
   cycleEntries: [],
   symptomsByDate: {},
   notesByDate: {},
+  calendarTagsByDate: {},
   settings: {
     appName: 'Нежный Календарик',
     profileName: 'Любимая',

@@ -10,6 +10,10 @@ const migrate = (raw: Partial<AppState>): AppState => ({
   settings: {
     ...defaultState.settings,
     ...raw.settings
+  },
+  calendarTagsByDate: {
+    ...defaultState.calendarTagsByDate,
+    ...raw.calendarTagsByDate
   }
 });
 

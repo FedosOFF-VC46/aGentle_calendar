@@ -13,9 +13,11 @@ export const OnboardingScreen = ({ onStart, onEnableNotifications }: Props) => {
 
   return (
     <div className="onboard">
-      <div className="card" style={{ width: '100%' }}>
-        <h1 className="h1">Нежный Календарик</h1>
-        <p className="muted">Шаг {step} из 5 — заботливо и спокойно.</p>
+      <div className="card hero-card" style={{ width: '100%' }}>
+        <div className="hero-card__glow" />
+        <p className="eyebrow">Новый старт</p>
+        <h1 className="hero-title">Нежный Календарик</h1>
+        <p className="muted">Шаг {step} из 5 — заботливо, спокойно и без перегруза.</p>
         {step === 1 && <Disclaimer />}
         {step === 2 && (
           <>
@@ -36,17 +38,17 @@ export const OnboardingScreen = ({ onStart, onEnableNotifications }: Props) => {
         {step === 4 && (
           <>
             <h3 className="h2">Нежные уведомления</h3>
-            <button className="btn" type="button" onClick={onEnableNotifications}>
+            <button className="btn action-btn" type="button" onClick={onEnableNotifications}>
               Включить уведомления
             </button>
           </>
         )}
         {step === 5 && (
           <div className="row">
-            <button className="btn" onClick={() => onStart(startDate, true, profileName)}>
+            <button className="btn action-btn" onClick={() => onStart(startDate, true, profileName)}>
               Заполнить по моей схеме
             </button>
-            <button className="btn secondary" onClick={() => onStart(startDate, false, profileName)}>
+            <button className="btn secondary action-btn" onClick={() => onStart(startDate, false, profileName)}>
               Начать с пустого
             </button>
           </div>
@@ -54,7 +56,7 @@ export const OnboardingScreen = ({ onStart, onEnableNotifications }: Props) => {
 
         <div style={{ marginTop: 12 }}>
           {step < 5 ? (
-            <button className="btn" type="button" onClick={() => setStep((prev) => prev + 1)}>
+            <button className="btn action-btn" type="button" onClick={() => setStep((prev) => prev + 1)}>
               Далее
             </button>
           ) : null}
