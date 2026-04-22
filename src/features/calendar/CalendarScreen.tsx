@@ -3,7 +3,7 @@ import { addMonths, eachDayOfInterval, endOfMonth, format, getDay, isSameMonth, 
 import { ru } from 'date-fns/locale';
 import { getCurrentCycleDay } from '../../lib/calendarMeta';
 import { createId } from '../../lib/ids';
-import type { AppState, CalendarTag } from '../../types/domain';
+import type { AppState, CalendarTag, IntakeStatus } from '../../types/domain';
 
 type MarkerId = 'dose-pending' | 'dose-done' | 'symptoms' | 'note' | 'event' | 'task' | CalendarTag;
 
@@ -88,17 +88,17 @@ const KiteIcon = (props: SVGProps<SVGSVGElement>) => (
 );
 
 const MARKER_META: MarkerMeta[] = [
+  { id: 'important', label: 'Важно', color: '#f2b5a7', priority: 6, Icon: SparkIcon },
+  { id: 'period', label: 'Цикл', color: '#f1a0bc', priority: -1, Icon: DropIcon },
+  { id: 'event', label: 'Событие', color: '#8ab6e0', priority: -2, Icon: FlagIcon },
   { id: 'dose-pending', label: 'Приемы', color: '#8fc8a8', priority: 1, Icon: PillIcon },
   { id: 'dose-done', label: 'Все приняты', color: '#66a88a', priority: 0, Icon: CheckArcIcon },
-  { id: 'symptoms', label: 'Симптомы', color: '#c8b4f2', priority: 2, Icon: PulseIcon },
   { id: 'note', label: 'Заметка', color: '#f0c8a6', priority: 3, Icon: NoteIcon },
-  { id: 'event', label: 'Событие', color: '#8ab6e0', priority: 4, Icon: FlagIcon },
   { id: 'task', label: 'Задача', color: '#f3d287', priority: 5, Icon: KiteIcon },
-  { id: 'important', label: 'Важно', color: '#f2b5a7', priority: 6, Icon: SparkIcon },
   { id: 'self-care', label: 'Забота о себе', color: '#b8d6b1', priority: 7, Icon: LeafIcon },
   { id: 'intimacy', label: 'Интим', color: '#f5adc8', priority: 8, Icon: HeartIcon },
-  { id: 'rest', label: 'Отдых', color: '#b9c8ec', priority: 9, Icon: MoonIcon },
-  { id: 'period', label: 'Цикл', color: '#f1a0bc', priority: 10, Icon: DropIcon }
+  { id: 'symptoms', label: 'Симптомы', color: '#c8b4f2', priority: 2, Icon: PulseIcon },
+  { id: 'rest', label: 'Отдых', color: '#b9c8ec', priority: 9, Icon: MoonIcon }
 ];
 
 const TAG_OPTIONS = MARKER_META.filter((marker): marker is MarkerMeta & { id: CalendarTag } =>
@@ -106,6 +106,35 @@ const TAG_OPTIONS = MARKER_META.filter((marker): marker is MarkerMeta & { id: Ca
 );
 
 const markerMetaMap = new Map(MARKER_META.map((item) => [item.id, item]));
+const intakeKindLabels = {
+  tablet: 'Таблетка',
+  capsule: 'Капсула',
+  suppository: 'Свеча',
+  vitamin: 'Витамины'
+} as const;
+const foodLabels = {
+  before: 'до еды',
+  during: 'во время еды',
+  after: 'после еды',
+  any: 'не важно'
+} as const;
+const doseStatusLabels: Record<IntakeStatus, string> = {
+  scheduled: 'Запланировано',
+  done: 'Принято',
+  skipped: 'Пропущено',
+  postponed: 'Отложено'
+};
+
+const postponeByHour = (time: string) => {
+  const [hoursRaw, minutesRaw] = time.split(':');
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return '23:30';
+  const totalMinutes = Math.min(hours * 60 + minutes + 60, 23 * 60 + 59);
+  const nextHours = Math.floor(totalMinutes / 60);
+  const nextMinutes = totalMinutes % 60;
+  return `${String(nextHours).padStart(2, '0')}:${String(nextMinutes).padStart(2, '0')}`;
+};
 
 const getSummaryForDate = (state: AppState, date: string) => {
   const doses = state.treatmentPlan?.doses.filter((dose) => dose.date === date) ?? [];
@@ -156,16 +185,21 @@ const MarkerBadge = ({
 
 export const CalendarScreen = ({
   state,
-  patch
+  patch,
+  updateDoseStatus
 }: {
   state: AppState;
   patch: (updater: (prev: AppState) => AppState) => void;
+  updateDoseStatus: (doseId: string, status: IntakeStatus, time?: string) => void;
 }) => {
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [eventTitle, setEventTitle] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [isEditorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<'all' | 'doses'>('all');
+  const [dosesExpanded, setDosesExpanded] = useState(false);
+  const [exitingDoseIds, setExitingDoseIds] = useState<Record<string, 'done' | 'skipped'>>({});
 
   const monthStart = startOfMonth(visibleMonth);
   const monthEnd = endOfMonth(visibleMonth);
@@ -174,6 +208,7 @@ export const CalendarScreen = ({
   const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   const todayDate = format(new Date(), 'yyyy-MM-dd');
   const cycleDay = useMemo(() => getCurrentCycleDay(state, todayDate), [state, todayDate]);
+  const medsById = useMemo(() => new Map(state.treatmentPlan?.medications.map((med) => [med.id, med])), [state.treatmentPlan?.medications]);
 
   const selectedSummary = useMemo(() => getSummaryForDate(state, selectedDate), [selectedDate, state]);
 
@@ -181,6 +216,13 @@ export const CalendarScreen = ({
     setNoteDraft(state.notesByDate[selectedDate]?.text ?? '');
     setEventTitle('');
   }, [selectedDate, state.notesByDate]);
+
+  useEffect(() => {
+    if (!isEditorOpen) return;
+    setEditorMode('all');
+    setDosesExpanded(false);
+    setExitingDoseIds({});
+  }, [isEditorOpen, selectedDate]);
 
   useEffect(() => {
     if (!isEditorOpen) return;
@@ -258,6 +300,23 @@ export const CalendarScreen = ({
         }
       };
     });
+  };
+
+  const visibleDoses = selectedSummary.doses
+    .filter((dose) => !['done', 'skipped'].includes(dose.status))
+    .slice()
+    .sort((a, b) => a.currentTime.localeCompare(b.currentTime));
+
+  const animateDoseAction = (doseId: string, status: 'done' | 'skipped') => {
+    setExitingDoseIds((prev) => ({ ...prev, [doseId]: status }));
+    window.setTimeout(() => {
+      updateDoseStatus(doseId, status);
+      setExitingDoseIds((prev) => {
+        const next = { ...prev };
+        delete next[doseId];
+        return next;
+      });
+    }, 320);
   };
 
   return (
@@ -393,6 +452,22 @@ export const CalendarScreen = ({
                 <h2 id="calendar-editor-title" className="calendar-modal-title">
                   {format(new Date(selectedDate), 'd MMM yyyy', { locale: ru })}
                 </h2>
+                <div className="calendar-modal-toggle">
+                  <button
+                    type="button"
+                    className={`btn chip-btn ${editorMode === 'all' ? 'active' : 'ghost'}`}
+                    onClick={() => setEditorMode('all')}
+                  >
+                    Все
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn chip-btn ${editorMode === 'doses' ? 'active' : 'ghost'}`}
+                    onClick={() => setEditorMode('doses')}
+                  >
+                    Только приемы
+                  </button>
+                </div>
               </div>
               <button type="button" className="calendar-close" onClick={() => setEditorOpen(false)} aria-label="Закрыть">
                 ×
@@ -400,70 +475,131 @@ export const CalendarScreen = ({
             </div>
 
             <div className="calendar-modal-section">
-              <div className="calendar-modal-label">Метки</div>
-              <div className="calendar-tag-row">
-                {TAG_OPTIONS.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    className={`tag-chip ${selectedSummary.tags.includes(tag.id) ? 'active' : ''}`}
-                    style={{ '--tag-color': tag.color } as CSSProperties}
-                    onClick={() => toggleTag(tag.id)}
-                  >
-                    <tag.Icon className="marker-glyph" />
-                    {tag.label}
-                  </button>
-                ))}
+              <button type="button" className="calendar-accordion-head" onClick={() => setDosesExpanded((prev) => !prev)}>
+                <span>
+                  <span className="calendar-modal-label">Приемы на день</span>
+                  <small className="muted">{visibleDoses.length > 0 ? `${visibleDoses.length} активных` : selectedSummary.doses.length > 0 ? 'все уже отмечены' : 'нет приемов'}</small>
+                </span>
+                <span className={`calendar-accordion-arrow ${dosesExpanded ? 'open' : ''}`}>⌄</span>
+              </button>
+              <div className={`calendar-accordion-panel ${dosesExpanded ? 'open' : ''}`}>
+                {selectedSummary.doses.length > 0 ? (
+                  <div className="calendar-dose-list">
+                    {visibleDoses.map((dose) => {
+                      const med = medsById.get(dose.medicationId);
+                      if (!med) return null;
+                      const isPostponed = dose.status === 'postponed';
+                      return (
+                        <div key={dose.id} className={`calendar-dose-item dose-${dose.status} ${exitingDoseIds[dose.id] ? `is-exiting exit-${exitingDoseIds[dose.id]}` : ''}`}>
+                          <div className="space" style={{ alignItems: 'flex-start' }}>
+                            <div>
+                              <strong>{dose.currentTime} · {med.name}</strong>
+                              <p className="muted" style={{ margin: '4px 0 0' }}>
+                                {med.dosage}, {med.quantity}, {foodLabels[med.withFood]}
+                              </p>
+                            </div>
+                            <span className="badge">{intakeKindLabels[med.intakeKind]}</span>
+                          </div>
+                          <div className="space" style={{ marginTop: 8 }}>
+                            <small className="muted">Статус: {doseStatusLabels[dose.status]}</small>
+                            {dose.currentTime !== dose.plannedTime && <small className="muted">Было: {dose.plannedTime}</small>}
+                          </div>
+                          <div className="calendar-dose-actions">
+                            <button type="button" className="btn action-btn success" onClick={() => animateDoseAction(dose.id, 'done')}>
+                              Принято
+                            </button>
+                            <button type="button" className="btn secondary action-btn" onClick={() => animateDoseAction(dose.id, 'skipped')}>
+                              Пропустить
+                            </button>
+                            <button type="button" className={`btn warn action-btn ${isPostponed ? 'active' : ''}`} onClick={() => updateDoseStatus(dose.id, 'postponed', postponeByHour(dose.currentTime))}>
+                              Отложить
+                            </button>
+                            {isPostponed && (
+                              <button type="button" className="btn ghost action-btn" onClick={() => updateDoseStatus(dose.id, 'scheduled', dose.plannedTime)}>
+                                Вернуть
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {visibleDoses.length === 0 && <p className="muted" style={{ margin: 0 }}>Все приемы на этот день уже отмечены.</p>}
+                  </div>
+                ) : (
+                  <p className="muted" style={{ margin: 0 }}>На этот день приемов нет.</p>
+                )}
               </div>
             </div>
 
-            <div className="calendar-modal-section">
-              <label className="calendar-modal-label" htmlFor="event-title">
-                Событие
-              </label>
-              <div className="row calendar-action-row">
-                <input
-                  id="event-title"
-                  className="input"
-                  value={eventTitle}
-                  onChange={(event) => setEventTitle(event.target.value)}
-                  placeholder="Например: визит к врачу"
-                />
-                <button type="button" className="btn success action-btn" onClick={addEvent}>
-                  Добавить
-                </button>
-              </div>
-              {selectedSummary.events.length > 0 && (
-                <div className="calendar-event-list">
-                  {selectedSummary.events.map((event) => (
-                    <div key={event.id} className="calendar-event-item">
-                      <span>{event.title}</span>
-                      <button type="button" className="btn ghost action-btn" onClick={() => removeEvent(event.id)}>
-                        Убрать
+            {editorMode === 'all' && (
+              <>
+                <div className="calendar-modal-section">
+                  <div className="calendar-modal-label">Метки</div>
+                  <div className="calendar-tag-row">
+                    {TAG_OPTIONS.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        className={`tag-chip ${selectedSummary.tags.includes(tag.id) ? 'active' : ''}`}
+                        style={{ '--tag-color': tag.color } as CSSProperties}
+                        onClick={() => toggleTag(tag.id)}
+                      >
+                        <tag.Icon className="marker-glyph" />
+                        {tag.label}
                       </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="calendar-modal-section">
-              <label className="calendar-modal-label" htmlFor="day-note">
-                Заметка
-              </label>
-              <textarea
-                id="day-note"
-                rows={4}
-                value={noteDraft}
-                onChange={(event) => setNoteDraft(event.target.value)}
-                placeholder="Что важно запомнить в этот день"
-              />
-              <div className="row">
-                <button type="button" className="btn action-btn" onClick={saveNote}>
-                  Сохранить заметку
-                </button>
-              </div>
-            </div>
+                <div className="calendar-modal-section">
+                  <label className="calendar-modal-label" htmlFor="event-title">
+                    Событие
+                  </label>
+                  <div className="row calendar-action-row">
+                    <input
+                      id="event-title"
+                      className="input"
+                      value={eventTitle}
+                      onChange={(event) => setEventTitle(event.target.value)}
+                      placeholder="Например: визит к врачу"
+                    />
+                    <button type="button" className="btn success action-btn" onClick={addEvent}>
+                      Добавить
+                    </button>
+                  </div>
+                  {selectedSummary.events.length > 0 && (
+                    <div className="calendar-event-list">
+                      {selectedSummary.events.map((event) => (
+                        <div key={event.id} className="calendar-event-item">
+                          <span>{event.title}</span>
+                          <button type="button" className="btn ghost action-btn" onClick={() => removeEvent(event.id)}>
+                            Убрать
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="calendar-modal-section">
+                  <label className="calendar-modal-label" htmlFor="day-note">
+                    Заметка
+                  </label>
+                  <textarea
+                    id="day-note"
+                    rows={4}
+                    value={noteDraft}
+                    onChange={(event) => setNoteDraft(event.target.value)}
+                    placeholder="Что важно запомнить в этот день"
+                  />
+                  <div className="row">
+                    <button type="button" className="btn action-btn" onClick={saveNote}>
+                      Сохранить заметку
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -91,7 +91,7 @@ export const App = () => {
           onSaveMood={saveMood}
         />
       )}
-      {screen === 'calendar' && <CalendarScreen state={state} patch={patch} />}
+      {screen === 'calendar' && <CalendarScreen state={state} patch={patch} updateDoseStatus={updateDoseStatus} />}
       {screen === 'medications' && <MedicationsScreen state={state} />}
       {screen === 'symptoms' && <SymptomsScreen todayEntry={todayEntry} onSave={saveEntry} />}
       {screen === 'more' && (
