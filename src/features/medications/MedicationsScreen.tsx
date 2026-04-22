@@ -4,6 +4,12 @@ import type { AppState } from '../../types/domain';
 
 const filters = ['all', 'today', 'tablet', 'suppository', 'post-menstrual'] as const;
 type Filter = (typeof filters)[number];
+const foodLabels = {
+  before: 'до еды',
+  during: 'во время еды',
+  after: 'после еды',
+  any: 'не важно'
+} as const;
 
 const filterLabels: Record<Filter, string> = {
   all: 'Все',
@@ -53,7 +59,7 @@ export const MedicationsScreen = ({ state }: { state: AppState }) => {
               <strong>{med.name}</strong>
               <span className="badge">{dose.date} {dose.currentTime}</span>
             </div>
-            <p className="muted">{med.dosage}, {med.quantity}, {med.withFood}</p>
+            <p className="muted">{med.dosage}, {med.quantity}, {foodLabels[med.withFood]}</p>
             <small>{med.notes.join(' · ')}</small>
           </div>
         );

@@ -139,6 +139,18 @@ button:not(:disabled):active { transform: scale(.98); }
 .row { display:flex; gap:8px; align-items:center; }
 .space { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .tab-row { display:flex; gap:8px; flex-wrap:wrap; }
+.day-switcher {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+.day-switcher__center {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
 .badge {
   padding: 5px 9px;
   border-radius: 999px;
@@ -368,6 +380,7 @@ button:not(:disabled):active { transform: scale(.98); }
 
 @media (max-width: 520px) {
   .hero-stats, .calendar-overview-grid { grid-template-columns: 1fr; }
+  .day-switcher { grid-template-columns: 1fr; }
   .calendar-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .calendar-modal-backdrop { padding: 8px; }
   .calendar-modal { border-radius: 22px; padding: 16px; }

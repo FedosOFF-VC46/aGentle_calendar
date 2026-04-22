@@ -10,9 +10,8 @@ const getMedicationDays = (medication: Medication): number[] => {
     return [...medication.specificDays].sort((a, b) => a - b);
   }
 
-  const start = medication.startDay ?? 1;
   const duration = medication.durationDays ?? 1;
-  return Array.from({ length: duration }, (_, index) => start + index);
+  return Array.from({ length: duration }, (_, index) => index + 1);
 };
 
 const createScheduledDose = (medicationId: string, date: string, time: string): MedicationDose => ({
@@ -29,9 +28,10 @@ export const generateDosesForMedications = (startDate: string, medications: Medi
   return medications.flatMap((medication) => {
     const days = getMedicationDays(medication);
     const times = medication.defaultTimes.length ? medication.defaultTimes : ['08:00'];
+    const medicationStartDate = medication.startDate ?? startDate;
 
     return days.flatMap((day) => {
-      const date = dayShift(startDate, day - 1);
+      const date = dayShift(medicationStartDate, day - 1);
       return times.map((time) => createScheduledDose(medication.id, date, time));
     });
   });
@@ -57,7 +57,11 @@ export const rebuildPlanDoses = (plan: TreatmentPlan): TreatmentPlan => {
 };
 
 export const buildInitialPlan = (startDate: string): TreatmentPlan => {
-  const doses = generateDosesForMedications(startDate, presetMedications.filter((medication) => !['maxilac', 'clindacin', 'acylact'].includes(medication.id)));
+  const medications = presetMedications.map((medication) => ({
+    ...medication,
+    startDate: medication.startDate ?? startDate
+  }));
+  const doses = generateDosesForMedications(startDate, medications.filter((medication) => !['maxilac', 'clindacin', 'acylact'].includes(medication.id)));
 
   const tasks: DailyTask[] = [
     {
@@ -73,7 +77,7 @@ export const buildInitialPlan = (startDate: string): TreatmentPlan => {
   return {
     id: createId('plan'),
     startDate,
-    medications: presetMedications,
+    medications,
     doses,
     tasks,
     customEvents: []
@@ -82,7 +86,9 @@ export const buildInitialPlan = (startDate: string): TreatmentPlan => {
 
 export const applyPostMenstrualStage = (plan: TreatmentPlan, endDate: string): TreatmentPlan => {
   const courseStart = dayShift(endDate, 1);
-  const postStageMedications = plan.medications.filter((medication) => ['maxilac', 'clindacin', 'acylact'].includes(medication.id));
+  const postStageMedications = plan.medications
+    .filter((medication) => ['maxilac', 'clindacin', 'acylact'].includes(medication.id))
+    .map((medication) => ({ ...medication, startDate: courseStart }));
   const generated = generateDosesForMedications(courseStart, postStageMedications);
 
   const deduped = [...plan.doses, ...generated].filter(

@@ -27,7 +27,7 @@ export const App = () => {
 
   const { state, patch } = useLocalStore();
   const { requestPermission } = useNotifications();
-  const { todayDoses, createPlan, updateDoseStatus, updateMedications } = useTreatmentPlan(state, patch);
+  const { createPlan, updateDoseStatus, updateMedications } = useTreatmentPlan(state, patch);
   const { todayEntry, saveEntry } = useSymptoms(state, patch);
 
   useEffect(() => {
@@ -38,7 +38,8 @@ export const App = () => {
 
   const todayDate = format(new Date(), 'yyyy-MM-dd');
 
-  const handleOnboardingStart = (startDate: string, prefill: boolean, profileName: 'Солнышко' | 'Любимая' | 'Котик') => {
+  const handleOnboardingStart = (prefill: boolean, profileName: 'Солнышко' | 'Любимая' | 'Котик') => {
+    const startDate = todayDate;
     patch((prev) => ({
       ...prev,
       onboardingCompleted: true,
@@ -49,10 +50,11 @@ export const App = () => {
 
   const initializeEmptyPlan = (startDate: string) => ({ ...createPlan(startDate), doses: [] });
 
-  const saveMood = (mood: MoodLevel) => {
+  const saveMood = (date: string, mood: MoodLevel) => {
+    const currentEntry = state.symptomsByDate[date];
     saveEntry({
-      ...(todayEntry ?? {
-        date: todayDate,
+      ...(currentEntry ?? {
+        date,
         painLevel: 0,
         bleeding: 'none',
         nausea: false,
@@ -85,10 +87,8 @@ export const App = () => {
       {screen === 'today' && (
         <TodayScreen
           state={state}
-          todayDoses={todayDoses}
           updateDoseStatus={updateDoseStatus}
           onSaveMood={saveMood}
-          mood={todayEntry?.mood}
         />
       )}
       {screen === 'calendar' && <CalendarScreen state={state} patch={patch} />}

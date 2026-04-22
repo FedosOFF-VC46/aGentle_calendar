@@ -9,6 +9,18 @@ interface Props {
 
 const intakeKinds: IntakeKind[] = ['tablet', 'capsule', 'suppository', 'vitamin'];
 const foodModes: Array<Medication['withFood']> = ['before', 'during', 'after', 'any'];
+const intakeKindLabels: Record<IntakeKind, string> = {
+  tablet: 'Таблетка',
+  capsule: 'Капсула',
+  suppository: 'Свеча',
+  vitamin: 'Витамины'
+};
+const foodModeLabels: Record<Medication['withFood'], string> = {
+  before: 'До еды',
+  during: 'Во время еды',
+  after: 'После еды',
+  any: 'Не важно'
+};
 
 const parseTimes = (value: string) =>
   value
@@ -57,7 +69,7 @@ export const TreatmentSettingsScreen = ({ medications, onSave }: Props) => {
         notes: ['Добавлено вручную'],
         defaultTimes: ['09:00'],
         durationDays: 7,
-        startDay: 1
+        startDate: new Date().toISOString().slice(0, 10)
       }
     ]);
     setNewMedicationName('');
@@ -83,7 +95,7 @@ export const TreatmentSettingsScreen = ({ medications, onSave }: Props) => {
           <summary className="details-summary">
             <div>
               <strong>{medication.name}</strong>
-              <p className="muted" style={{ margin: '4px 0 0' }}>{medication.defaultTimes.join(', ')} · {medication.intakeKind}</p>
+              <p className="muted" style={{ margin: '4px 0 0' }}>{medication.defaultTimes.join(', ')} · {intakeKindLabels[medication.intakeKind]}</p>
             </div>
             <button className="btn ghost action-btn" type="button" onClick={(event) => {
               event.preventDefault();
@@ -106,13 +118,13 @@ export const TreatmentSettingsScreen = ({ medications, onSave }: Props) => {
             <div style={{ flex: 1, minWidth: 140 }}>
               <label>Тип приема</label>
               <select value={medication.intakeKind} onChange={(event) => update(medication.id, (item) => ({ ...item, intakeKind: event.target.value as IntakeKind }))}>
-                {intakeKinds.map((kind) => <option key={kind}>{kind}</option>)}
+                {intakeKinds.map((kind) => <option key={kind} value={kind}>{intakeKindLabels[kind]}</option>)}
               </select>
             </div>
             <div style={{ flex: 1, minWidth: 140 }}>
               <label>Относительно еды</label>
               <select value={medication.withFood} onChange={(event) => update(medication.id, (item) => ({ ...item, withFood: event.target.value as Medication['withFood'] }))}>
-                {foodModes.map((mode) => <option key={mode}>{mode}</option>)}
+                {foodModes.map((mode) => <option key={mode} value={mode}>{foodModeLabels[mode]}</option>)}
               </select>
             </div>
           </div>
@@ -125,13 +137,12 @@ export const TreatmentSettingsScreen = ({ medications, onSave }: Props) => {
           />
           <div className="row" style={{ marginTop: 8, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 140 }}>
-              <label>Старт с дня</label>
+              <label>Дата старта</label>
               <input
                 className="input"
-                type="number"
-                min={1}
-                value={medication.startDay ?? 1}
-                onChange={(event) => update(medication.id, (item) => ({ ...item, startDay: Number(event.target.value) || 1 }))}
+                type="date"
+                value={medication.startDate ?? new Date().toISOString().slice(0, 10)}
+                onChange={(event) => update(medication.id, (item) => ({ ...item, startDate: event.target.value }))}
               />
             </div>
             <div style={{ flex: 1, minWidth: 140 }}>
@@ -145,7 +156,7 @@ export const TreatmentSettingsScreen = ({ medications, onSave }: Props) => {
               />
             </div>
           </div>
-          <label style={{ marginTop: 8, display: 'block' }}>Точные дни курса (опционально)</label>
+          <label style={{ marginTop: 8, display: 'block' }}>Точные дни курса (опционально, числа)</label>
           <input
             className="input"
             value={serializeDays(medication.specificDays)}

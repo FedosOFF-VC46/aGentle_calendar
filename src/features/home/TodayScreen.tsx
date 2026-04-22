@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
+import { addDays, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getCurrentCycleDay } from '../../lib/calendarMeta';
 import type { AppState, IntakeStatus, MedicationDose, MoodLevel } from '../../types/domain';
@@ -7,9 +7,7 @@ import type { AppState, IntakeStatus, MedicationDose, MoodLevel } from '../../ty
 interface Props {
   state: AppState;
   updateDoseStatus: (doseId: string, status: IntakeStatus, time?: string) => void;
-  todayDoses: MedicationDose[];
-  onSaveMood: (mood: MoodLevel) => void;
-  mood?: MoodLevel;
+  onSaveMood: (date: string, mood: MoodLevel) => void;
 }
 
 const moodLabels: Record<MoodLevel, string> = {
@@ -25,6 +23,18 @@ const statusLabels: Record<IntakeStatus, string> = {
   skipped: 'Пропущено',
   postponed: 'Отложено'
 };
+const intakeKindLabels = {
+  tablet: 'Таблетка',
+  capsule: 'Капсула',
+  suppository: 'Свеча',
+  vitamin: 'Витамины'
+} as const;
+const foodLabels = {
+  before: 'до еды',
+  during: 'во время еды',
+  after: 'после еды',
+  any: 'не важно'
+} as const;
 
 type TimeFilter = 'all' | 'morning' | 'day' | 'evening' | 'night';
 
@@ -38,25 +48,49 @@ const isInTimeBucket = (time: string, bucket: TimeFilter) => {
   return hours >= 0 && hours < 5;
 };
 
+const postponeByHour = (time: string) => {
+  const [hoursRaw, minutesRaw] = time.split(':');
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return '23:30';
+
+  const totalMinutes = Math.min(hours * 60 + minutes + 60, 23 * 60 + 59);
+  const nextHours = Math.floor(totalMinutes / 60);
+  const nextMinutes = totalMinutes % 60;
+
+  return `${String(nextHours).padStart(2, '0')}:${String(nextMinutes).padStart(2, '0')}`;
+};
+
 export const TodayScreen = (props: Props) => {
-  const { state, todayDoses = [], updateDoseStatus, onSaveMood, mood } = props;
+  const { state, updateDoseStatus, onSaveMood } = props;
   const [statusFilter, setStatusFilter] = useState<IntakeStatus | 'all'>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [undoAction, setUndoAction] = useState<{ doseId: string; previousStatus: IntakeStatus; previousTime: string } | null>(null);
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const todayIso = format(new Date(), 'yyyy-MM-dd');
-  const today = format(new Date(), 'EEEE, d MMMM', { locale: ru });
-  const cycleDay = getCurrentCycleDay(state, todayIso);
-  const upcomingCount = todayDoses.filter((dose) => dose.status === 'scheduled').length;
-  const completedCount = todayDoses.filter((dose) => dose.status === 'done').length;
+  const selectedDateLabel = format(new Date(selectedDate), 'EEEE, d MMMM', { locale: ru });
+  const cycleDay = getCurrentCycleDay(state, selectedDate);
+  const selectedMood = state.symptomsByDate[selectedDate]?.mood;
+  const dosesForDate = useMemo(
+    () => state.treatmentPlan?.doses.filter((dose) => dose.date === selectedDate).sort((a, b) => a.currentTime.localeCompare(b.currentTime)) ?? [],
+    [selectedDate, state.treatmentPlan]
+  );
+  const upcomingCount = dosesForDate.filter((dose) => dose.status === 'scheduled').length;
+  const completedCount = dosesForDate.filter((dose) => dose.status === 'done').length;
   const medsById = new Map(state.treatmentPlan?.medications.map((med) => [med.id, med]));
+
+  useEffect(() => {
+    setUndoAction(null);
+  }, [selectedDate]);
 
   const filteredDoses = useMemo(
     () =>
-      todayDoses.filter(
+      dosesForDate.filter(
         (dose) => (statusFilter === 'all' || dose.status === statusFilter) && isInTimeBucket(dose.currentTime, timeFilter)
       ),
-    [statusFilter, timeFilter, todayDoses]
+    [dosesForDate, statusFilter, timeFilter]
   );
 
   const onDoseAction = (dose: MedicationDose, status: IntakeStatus, time?: string) => {
@@ -76,11 +110,11 @@ export const TodayScreen = (props: Props) => {
         <div className="hero-card__glow" />
         <p className="eyebrow">Сегодня</p>
         <h1 className="hero-title">Забота о себе</h1>
-        <p className="muted">{today}</p>
+        <p className="muted">{selectedDateLabel}</p>
         <div className="hero-stats">
           <div className="hero-stat">
             <span className="muted">Запланировано</span>
-            <strong>{todayDoses.length}</strong>
+            <strong>{dosesForDate.length}</strong>
           </div>
           <div className="hero-stat">
             <span className="muted">Еще впереди</span>
@@ -95,8 +129,25 @@ export const TodayScreen = (props: Props) => {
 
       <div className="card card-soft">
         <div className="space">
-          <strong>Сегодняшний план</strong>
-          <span className="badge">Выполнено {completedCount}/{todayDoses.length}</span>
+          <strong>{selectedDate === todayIso ? 'Сегодняшний план' : 'План на выбранный день'}</strong>
+          <span className="badge">Выполнено {completedCount}/{dosesForDate.length}</span>
+        </div>
+        <div className="day-switcher">
+          <button type="button" className="btn ghost chip-btn" onClick={() => setSelectedDate(format(addDays(new Date(selectedDate), -1), 'yyyy-MM-dd'))}>
+            ← Предыдущий
+          </button>
+          <div className="day-switcher__center">
+            <strong>{selectedDateLabel}</strong>
+            <input className="input" type="date" value={selectedDate} max={todayIso} onChange={(event) => setSelectedDate(event.target.value)} />
+          </div>
+          <button
+            type="button"
+            className="btn ghost chip-btn"
+            onClick={() => setSelectedDate(format(addDays(new Date(selectedDate), 1), 'yyyy-MM-dd'))}
+            disabled={selectedDate >= todayIso}
+          >
+            Следующий →
+          </button>
         </div>
         <div className="today-filters">
           {(['all', 'scheduled', 'done', 'postponed', 'skipped'] as const).map((item) => (
@@ -138,11 +189,11 @@ export const TodayScreen = (props: Props) => {
             <div key={dose.id} className={`card dose-card dose-${dose.status}`} style={{ marginBottom: 10, padding: 12 }}>
               <div className="space">
                 <strong>{dose.currentTime}</strong>
-                <span className="badge">{med.intakeKind}</span>
+                <span className="badge">{intakeKindLabels[med.intakeKind]}</span>
               </div>
               <div>{med.name}</div>
               <small className="muted">
-                {med.dosage}, {med.quantity}, {med.withFood}
+                {med.dosage}, {med.quantity}, {foodLabels[med.withFood]}
               </small>
               <div className="space" style={{ marginTop: 6 }}>
                 <small className="muted">Статус: {statusLabels[dose.status]}</small>
@@ -155,12 +206,21 @@ export const TodayScreen = (props: Props) => {
                 <button type="button" className={`btn secondary action-btn ${isSkipped ? 'active' : ''}`} onClick={() => onDoseAction(dose, 'skipped')} disabled={isSkipped}>
                   Пропустить
                 </button>
-                <button type="button" className={`btn warn action-btn ${isPostponed ? 'active' : ''}`} onClick={() => onDoseAction(dose, 'postponed', '23:30')}>
+                <button
+                  type="button"
+                  className={`btn warn action-btn ${isPostponed ? 'active' : ''}`}
+                  onClick={() => onDoseAction(dose, 'postponed', postponeByHour(dose.currentTime))}
+                >
                   Отложить
                 </button>
-                {dose.status !== 'scheduled' && (
+                {dose.status === 'postponed' && (
                   <button type="button" className="btn ghost action-btn" onClick={() => onDoseAction(dose, 'scheduled', dose.plannedTime)}>
-                    Сбросить
+                    Вернуть в план
+                  </button>
+                )}
+                {dose.status !== 'scheduled' && dose.status !== 'postponed' && (
+                  <button type="button" className="btn ghost action-btn" onClick={() => onDoseAction(dose, 'scheduled', dose.plannedTime)}>
+                    Сбросить статус
                   </button>
                 )}
               </div>
@@ -170,10 +230,10 @@ export const TodayScreen = (props: Props) => {
       </div>
 
       <div className="card card-soft">
-        <h2 className="h2">Как ты сегодня себя чувствуешь?</h2>
+        <h2 className="h2">{selectedDate === todayIso ? 'Как ты сегодня себя чувствуешь?' : 'Как ты себя чувствовала в этот день?'}</h2>
         <div className="row" style={{ flexWrap: 'wrap' }}>
           {(Object.keys(moodLabels) as MoodLevel[]).map((item) => (
-            <button type="button" key={item} className={`btn chip-btn ${mood === item ? 'secondary active' : ''}`} onClick={() => onSaveMood(item)}>
+            <button type="button" key={item} className={`btn chip-btn ${selectedMood === item ? 'secondary active' : ''}`} onClick={() => onSaveMood(selectedDate, item)}>
               {moodLabels[item]}
             </button>
           ))}

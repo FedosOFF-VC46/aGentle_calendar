@@ -1,16 +1,7 @@
-import { useMemo } from 'react';
-import { format } from 'date-fns';
 import { buildInitialPlan, rebuildPlanDoses } from '../lib/treatmentEngine';
 import type { AppState, IntakeStatus, Medication } from '../types/domain';
 
-export const useTreatmentPlan = (state: AppState, patch: (updater: (s: AppState) => AppState) => void) => {
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  const todayDoses = useMemo(
-    () => state.treatmentPlan?.doses.filter((dose) => dose.date === today).sort((a, b) => a.currentTime.localeCompare(b.currentTime)) ?? [],
-    [state.treatmentPlan, today]
-  );
-
+export const useTreatmentPlan = (_state: AppState, patch: (updater: (s: AppState) => AppState) => void) => {
   const createPlan = (startDate: string) => buildInitialPlan(startDate);
 
   const updateDoseStatus = (doseId: string, status: IntakeStatus, time?: string) => {
@@ -25,7 +16,12 @@ export const useTreatmentPlan = (state: AppState, patch: (updater: (s: AppState)
               ? {
                   ...dose,
                   status,
-                  currentTime: status === 'postponed' && time ? time : dose.currentTime
+                  currentTime:
+                    status === 'postponed' && time
+                      ? time
+                      : status === 'scheduled'
+                        ? time ?? dose.plannedTime
+                        : dose.currentTime
                 }
               : dose
           )
@@ -44,5 +40,5 @@ export const useTreatmentPlan = (state: AppState, patch: (updater: (s: AppState)
     });
   };
 
-  return { todayDoses, createPlan, updateDoseStatus, updateMedications };
+  return { createPlan, updateDoseStatus, updateMedications };
 };

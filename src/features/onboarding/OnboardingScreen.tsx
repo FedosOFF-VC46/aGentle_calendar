@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Disclaimer } from '../../components/common/Disclaimer';
 
 interface Props {
-  onStart: (startDate: string, prefill: boolean, profileName: 'Солнышко' | 'Любимая' | 'Котик') => void;
+  onStart: (prefill: boolean, profileName: 'Солнышко' | 'Любимая' | 'Котик') => void;
   onEnableNotifications: () => Promise<void>;
 }
 
 export const OnboardingScreen = ({ onStart, onEnableNotifications }: Props) => {
   const [step, setStep] = useState(1);
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [profileName, setProfileName] = useState<'Солнышко' | 'Любимая' | 'Котик'>('Любимая');
 
   return (
@@ -21,18 +20,18 @@ export const OnboardingScreen = ({ onStart, onEnableNotifications }: Props) => {
         {step === 1 && <Disclaimer />}
         {step === 2 && (
           <>
-            <h3 className="h2">Дата начала лечения</h3>
-            <input className="input" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
-          </>
-        )}
-        {step === 3 && (
-          <>
             <h3 className="h2">Как тебя называть?</h3>
             <select value={profileName} onChange={(event) => setProfileName(event.target.value as typeof profileName)}>
               <option>Солнышко</option>
               <option>Любимая</option>
               <option>Котик</option>
             </select>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <h3 className="h2">Про лекарства потом</h3>
+            <p className="muted">Старт лечения теперь задается отдельно у каждого препарата прямо в схеме. Это удобнее, если лекарства начинаются в разные даты.</p>
           </>
         )}
         {step === 4 && (
@@ -45,10 +44,10 @@ export const OnboardingScreen = ({ onStart, onEnableNotifications }: Props) => {
         )}
         {step === 5 && (
           <div className="row">
-            <button className="btn action-btn" onClick={() => onStart(startDate, true, profileName)}>
+            <button className="btn action-btn" onClick={() => onStart(true, profileName)}>
               Заполнить по моей схеме
             </button>
-            <button className="btn secondary action-btn" onClick={() => onStart(startDate, false, profileName)}>
+            <button className="btn secondary action-btn" onClick={() => onStart(false, profileName)}>
               Начать с пустого
             </button>
           </div>
