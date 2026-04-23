@@ -449,9 +449,167 @@ button:not(:disabled):active { transform: scale(.98); }
   gap: 8px;
 }
 .details-summary::-webkit-details-marker { display: none; }
+.treatment-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,248,0.96));
+}
+.treatment-inline-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+.treatment-inline-hint {
+  margin: 0;
+  font-size: 12px;
+}
+.time-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.time-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(243, 248, 244, 0.95);
+  border: 1px solid rgba(114, 139, 118, 0.12);
+}
+.time-input {
+  border: none;
+  background: transparent;
+  color: #2e4739;
+  font-weight: 700;
+  min-width: 98px;
+  padding: 6px 10px;
+  outline: none;
+}
+.time-pill-remove {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255,255,255,0.9);
+  color: #617468;
+  box-shadow: none;
+  font-size: 18px;
+  line-height: 1;
+}
+.schedule-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(242, 249, 244, 0.94), rgba(255, 250, 247, 0.9));
+  border: 1px solid rgba(114, 139, 118, 0.12);
+}
+.toggle-switch {
+  position: relative;
+  width: 58px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: #dfe8e1;
+  box-shadow: inset 0 0 0 1px rgba(109, 133, 118, 0.12);
+}
+.toggle-switch.active {
+  background: linear-gradient(180deg, #bce8c8, #90d4a7);
+}
+.toggle-switch__thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 8px 16px rgba(70, 101, 76, 0.18);
+  transition: transform .22s ease;
+}
+.toggle-switch.active .toggle-switch__thumb {
+  transform: translateX(24px);
+}
+.manual-dates-panel {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.8);
+  border: 1px dashed rgba(114, 139, 118, 0.2);
+}
+.treatment-modal {
+  width: min(100%, 560px);
+}
+.manual-picker-card {
+  padding: 14px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(246, 250, 247, 0.92), rgba(255, 255, 255, 0.95));
+  border: 1px solid rgba(114, 139, 118, 0.12);
+}
+.manual-calendar-weekdays,
+.manual-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.manual-calendar-weekdays {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  color: #7a8d80;
+  font-size: 12px;
+  text-align: center;
+}
+.manual-calendar-day {
+  min-height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(114, 139, 118, 0.12);
+  background: rgba(255,255,255,0.92);
+  color: #355043;
+  box-shadow: none;
+}
+.manual-calendar-day.outside {
+  opacity: 0.45;
+}
+.manual-calendar-day.active {
+  background: linear-gradient(180deg, rgba(191, 233, 203, 0.95), rgba(157, 217, 177, 0.92));
+  border-color: rgba(111, 156, 117, 0.4);
+}
+.manual-picker-footer {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.toast-stack {
+  position: fixed;
+  left: 50%;
+  bottom: calc(108px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 30;
+  pointer-events: none;
+}
+.toast-pill {
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: rgba(46, 71, 57, 0.92);
+  color: #f7fcf8;
+  box-shadow: 0 18px 34px rgba(47, 71, 58, 0.22);
+  animation: toastIn .22s ease;
+}
 
 @keyframes modalRise {
   from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px) scale(.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -463,6 +621,7 @@ button:not(:disabled):active { transform: scale(.98); }
   .calendar-modal { border-radius: 22px; padding: 16px; }
   .calendar-action-row { flex-direction: column; }
   .setting-switch, .details-summary, .space { align-items: flex-start; }
+  .treatment-inline-head, .manual-dates-panel, .manual-picker-footer { flex-direction: column; align-items: stretch; }
   .bottom-nav { left: 8px; right: 8px; bottom: 8px; }
 }
 .onboard { min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px; }

@@ -1,17 +1,46 @@
-import { dayShift } from './date';
+import { addDays, differenceInCalendarDays } from 'date-fns';
+import { dayShift, fromISODate, toISODate } from './date';
 import { createId } from './ids';
 import { presetMedications } from '../data/presetPlan';
 import type { DailyTask, Medication, MedicationDose, TreatmentPlan } from '../types/domain';
 
 const doseKey = (dose: Pick<MedicationDose, 'medicationId' | 'date' | 'plannedTime'>) => `${dose.medicationId}|${dose.date}|${dose.plannedTime}`;
 
-const getMedicationDays = (medication: Medication): number[] => {
-  if (medication.specificDays?.length) {
-    return [...medication.specificDays].sort((a, b) => a - b);
+const getSortedUniqueDates = (dates: string[]) => [...new Set(dates)].sort((a, b) => a.localeCompare(b));
+
+const getManualDates = (medication: Medication, fallbackStartDate: string): string[] => {
+  if (medication.manualDates?.length) {
+    return getSortedUniqueDates(medication.manualDates);
   }
 
-  const duration = medication.durationDays ?? 1;
-  return Array.from({ length: duration }, (_, index) => index + 1);
+  if (medication.specificDays?.length) {
+    const medicationStartDate = medication.startDate ?? fallbackStartDate;
+    return getSortedUniqueDates(
+      [...medication.specificDays]
+        .sort((a, b) => a - b)
+        .map((day) => dayShift(medicationStartDate, day - 1))
+    );
+  }
+
+  return [];
+};
+
+const getContinuousDates = (medication: Medication, fallbackStartDate: string): string[] => {
+  const startDate = medication.startDate ?? fallbackStartDate;
+  const normalizedDuration = Math.max(medication.durationDays ?? 1, 1);
+
+  if (medication.endDate) {
+    const diff = differenceInCalendarDays(fromISODate(medication.endDate), fromISODate(startDate));
+    const span = Math.max(diff + 1, 1);
+    return Array.from({ length: span }, (_, index) => toISODate(addDays(fromISODate(startDate), index)));
+  }
+
+  return Array.from({ length: normalizedDuration }, (_, index) => dayShift(startDate, index));
+};
+
+const getMedicationDates = (medication: Medication, fallbackStartDate: string): string[] => {
+  const isManual = medication.scheduleMode === 'manual' || Boolean(medication.manualDates?.length) || Boolean(medication.specificDays?.length);
+  return isManual ? getManualDates(medication, fallbackStartDate) : getContinuousDates(medication, fallbackStartDate);
 };
 
 const createScheduledDose = (medicationId: string, date: string, time: string): MedicationDose => ({
@@ -26,14 +55,10 @@ const createScheduledDose = (medicationId: string, date: string, time: string): 
 
 export const generateDosesForMedications = (startDate: string, medications: Medication[]): MedicationDose[] => {
   return medications.flatMap((medication) => {
-    const days = getMedicationDays(medication);
+    const dates = getMedicationDates(medication, startDate);
     const times = medication.defaultTimes.length ? medication.defaultTimes : ['08:00'];
-    const medicationStartDate = medication.startDate ?? startDate;
 
-    return days.flatMap((day) => {
-      const date = dayShift(medicationStartDate, day - 1);
-      return times.map((time) => createScheduledDose(medication.id, date, time));
-    });
+    return dates.flatMap((date) => times.map((time) => createScheduledDose(medication.id, date, time)));
   });
 };
 
@@ -59,7 +84,8 @@ export const rebuildPlanDoses = (plan: TreatmentPlan): TreatmentPlan => {
 export const buildInitialPlan = (startDate: string): TreatmentPlan => {
   const medications = presetMedications.map((medication) => ({
     ...medication,
-    startDate: medication.startDate ?? startDate
+    startDate: medication.startDate ?? startDate,
+    scheduleMode: medication.scheduleMode ?? (medication.specificDays?.length ? 'manual' : 'continuous')
   }));
   const doses = generateDosesForMedications(startDate, medications.filter((medication) => !['maxilac', 'clindacin', 'acylact'].includes(medication.id)));
 

@@ -2,6 +2,7 @@ export type MoodLevel = 'excellent' | 'normal' | 'not-great' | 'bad';
 export type IntakeStatus = 'scheduled' | 'done' | 'skipped' | 'postponed';
 export type IntakeKind = 'tablet' | 'capsule' | 'suppository' | 'vitamin';
 export type BleedingLevel = 'none' | 'light' | 'moderate' | 'heavy';
+export type MedicationScheduleMode = 'continuous' | 'manual';
 
 export interface Medication {
   id: string;
@@ -13,9 +14,12 @@ export interface Medication {
   notes: string[];
   warnings?: string[];
   defaultTimes: string[];
+  scheduleMode?: MedicationScheduleMode;
   durationDays?: number;
   startDate?: string;
+  endDate?: string;
   specificDays?: number[];
+  manualDates?: string[];
 }
 
 export interface MedicationDose {
