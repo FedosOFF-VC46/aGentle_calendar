@@ -90,6 +90,7 @@ export interface AppSettings {
   appName: 'Нежный Календарик' | 'Забота рядом' | 'Тихий Ритм' | 'Лепесток';
   profileName: 'Солнышко' | 'Любимая' | 'Котик';
   notificationsEnabled: boolean;
+  medicationReminderIntervalMinutes: number;
   showCyclovitaTrack: boolean;
   disclaimerSeen: boolean;
 }

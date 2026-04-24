@@ -43,13 +43,15 @@ export const SettingsScreen = ({
           <option>Любимая</option>
           <option>Котик</option>
         </select>
-        <div className="setting-switch" style={{ marginTop: 12 }}>
+        <div className="setting-row" style={{ marginTop: 12 }}>
           <div>
-            <strong>Уведомления</strong>
-            <p className="muted" style={{ margin: '4px 0 0' }}>Напоминания о заботе и приемах на этом устройстве.</p>
+            <strong>Напоминания о приеме</strong>
+            <p className="muted" style={{ margin: '4px 0 0' }}>
+              Для включения и настройки повторов открой вкладку "Напоминания" в разделе "Еще".
+            </p>
           </div>
-          <button className={`btn action-btn ${state.settings.notificationsEnabled ? 'success' : ''}`} onClick={onEnableNotifications}>
-            {state.settings.notificationsEnabled ? 'Включены' : 'Включить'}
+          <button className="btn action-btn" onClick={onEnableNotifications}>
+            Разрешить
           </button>
         </div>
         <div className="row" style={{ marginTop: 12, flexWrap: 'wrap' }}>

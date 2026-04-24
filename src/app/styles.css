@@ -139,6 +139,14 @@ button:not(:disabled):active { transform: scale(.98); }
 .row { display:flex; gap:8px; align-items:center; }
 .space { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .tab-row { display:flex; gap:8px; flex-wrap:wrap; }
+.settings-stack { display: grid; gap: 14px; }
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.setting-row > div { min-width: 0; }
 .day-switcher {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -602,6 +610,16 @@ button:not(:disabled):active { transform: scale(.98); }
   box-shadow: 0 18px 34px rgba(47, 71, 58, 0.22);
   animation: toastIn .22s ease;
 }
+.reminder-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(103, 127, 108, 0.12);
+}
+.reminder-item:first-of-type { margin-top: 10px; }
+.reminder-item__content { min-width: 0; }
 
 @keyframes modalRise {
   from { opacity: 0; transform: translateY(14px) scale(.98); }
@@ -620,7 +638,8 @@ button:not(:disabled):active { transform: scale(.98); }
   .calendar-modal-backdrop { padding: 8px; }
   .calendar-modal { border-radius: 22px; padding: 16px; }
   .calendar-action-row { flex-direction: column; }
-  .setting-switch, .details-summary, .space { align-items: flex-start; }
+  .setting-switch, .setting-row, .details-summary, .space, .reminder-item { align-items: flex-start; }
+  .setting-row, .reminder-item { flex-direction: column; }
   .treatment-inline-head, .manual-dates-panel, .manual-picker-footer { flex-direction: column; align-items: stretch; }
   .bottom-nav { left: 8px; right: 8px; bottom: 8px; }
 }

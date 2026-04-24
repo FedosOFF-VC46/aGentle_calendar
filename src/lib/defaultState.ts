@@ -1,6 +1,6 @@
 import type { AppState } from '../types/domain';
 
-export const APP_STATE_VERSION = 3;
+export const APP_STATE_VERSION = 4;
 
 export const defaultState: AppState = {
   version: APP_STATE_VERSION,
@@ -14,6 +14,7 @@ export const defaultState: AppState = {
     appName: 'Нежный Календарик',
     profileName: 'Любимая',
     notificationsEnabled: false,
+    medicationReminderIntervalMinutes: 15,
     showCyclovitaTrack: true,
     disclaimerSeen: false
   }

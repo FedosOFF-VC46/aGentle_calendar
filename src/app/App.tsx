@@ -11,9 +11,11 @@ import { SettingsScreen } from '../features/settings/SettingsScreen';
 import { TreatmentSettingsScreen } from '../features/settings/TreatmentSettingsScreen';
 import { AboutScreen } from '../features/about/AboutScreen';
 import { DayDetailsModal } from '../features/day-details/DayDetailsModal';
+import { RemindersScreen } from '../features/reminders/RemindersScreen';
 import { useLocalStore } from '../hooks/useLocalStore';
 import { useTreatmentPlan } from '../hooks/useTreatmentPlan';
 import { useNotifications } from '../hooks/useNotifications';
+import { useMedicationReminders } from '../hooks/useMedicationReminders';
 import { useSymptoms } from '../hooks/useSymptoms';
 import { registerSW } from '../pwa/registerSW';
 import type { MoodLevel } from '../types/domain';
@@ -23,12 +25,14 @@ export type Screen = 'today' | 'calendar' | 'medications' | 'symptoms' | 'more';
 export const App = () => {
   const [isSplash, setSplash] = useState(true);
   const [screen, setScreen] = useState<Screen>('today');
-  const [moreTab, setMoreTab] = useState<'settings' | 'treatment' | 'about' | 'day'>('settings');
+  const [moreTab, setMoreTab] = useState<'settings' | 'reminders' | 'treatment' | 'about' | 'day'>('settings');
 
   const { state, patch } = useLocalStore();
-  const { requestPermission } = useNotifications();
+  const { isSupported, permission, requestPermission, notify } = useNotifications();
   const { createPlan, updateDoseStatus, updateMedications } = useTreatmentPlan(state, patch);
   const { todayEntry, saveEntry } = useSymptoms(state, patch);
+
+  useMedicationReminders({ state, isSupported, permission, notify });
 
   useEffect(() => {
     registerSW();
@@ -100,6 +104,7 @@ export const App = () => {
           <p className="muted">Спокойные настройки и служебные разделы. Отметки цикла теперь живут прямо в календаре.</p>
           <div className="tab-row" style={{ marginBottom: 12 }}>
             <button className={`btn chip-btn ${moreTab === 'settings' ? 'active' : 'ghost'}`} onClick={() => setMoreTab('settings')}>Настройки</button>
+            <button className={`btn chip-btn ${moreTab === 'reminders' ? 'active' : 'ghost'}`} onClick={() => setMoreTab('reminders')}>Напоминания</button>
             <button className={`btn chip-btn ${moreTab === 'treatment' ? 'active' : 'ghost'}`} onClick={() => setMoreTab('treatment')}>Схема</button>
             <button className={`btn chip-btn ${moreTab === 'day' ? 'active' : 'ghost'}`} onClick={() => setMoreTab('day')}>Сегодня</button>
             <button className={`btn chip-btn ${moreTab === 'about' ? 'active' : 'ghost'}`} onClick={() => setMoreTab('about')}>О приложении</button>
@@ -112,6 +117,32 @@ export const App = () => {
                 const permission = await requestPermission();
                 patch((prev) => ({ ...prev, settings: { ...prev.settings, notificationsEnabled: permission === 'granted' } }));
               }}
+            />
+          )}
+          {moreTab === 'reminders' && (
+            <RemindersScreen
+              state={state}
+              patch={patch}
+              isSupported={isSupported}
+              permission={permission}
+              onEnableNotifications={async () => {
+                const nextPermission = await requestPermission();
+                patch((prev) => ({
+                  ...prev,
+                  settings: {
+                    ...prev.settings,
+                    notificationsEnabled: nextPermission === 'granted'
+                  }
+                }));
+              }}
+              onMarkDoseDone={(doseId) => updateDoseStatus(doseId, 'done')}
+              onTestReminder={(title) =>
+                notify(title, {
+                  body: 'Тестовое уведомление из приложения aGentle Calendar.',
+                  tag: 'manual-test-reminder',
+                  requireInteraction: true
+                })
+              }
             />
           )}
           {moreTab === 'treatment' && state.treatmentPlan && <TreatmentSettingsScreen medications={state.treatmentPlan.medications} onSave={updateMedications} />}
